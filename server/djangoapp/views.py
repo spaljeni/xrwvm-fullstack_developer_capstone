@@ -4,6 +4,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json, logging
 
+# import funkcije za popunjavanje baze
+from .populate import initiate
+# importaj modele
+from .models import CarMake, CarModel
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,3 +54,17 @@ def registration(request):
         )
         login(request, user)
         return JsonResponse({"userName": username, "status": "Authenticated"})
+
+
+# --- New view to get cars ---
+def get_cars(request):
+    # ako nema niti jednog CarModel zapisa, pokreni seed
+    if CarModel.objects.count() == 0:
+        initiate()
+
+    car_models = CarModel.objects.select_related("car_make")
+    cars = []
+    for cm in car_models:
+        cars.append({"CarModel": cm.name, "CarMake": cm.car_make.name})
+    return JsonResponse({"CarModels": cars})
+
