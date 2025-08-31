@@ -12,4 +12,8 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name="Home.html"), name="home"),
     path('about/', TemplateView.as_view(template_name="About.html"), name="about"),
     path('contact/', TemplateView.as_view(template_name="Contact.html"), name="contact"),
+
+    # React pages
+    path('login/', TemplateView.as_view(template_name="index.html")),
+    path('register/', TemplateView.as_view(template_name="index.html")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
