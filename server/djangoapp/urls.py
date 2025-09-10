@@ -1,18 +1,18 @@
-# Uncomment the imports before you add the code
-# from django.urls import path
-from django.conf.urls.static import static
-from django.conf import settings
-# from . import views
+from django.contrib import admin
+from django.urls import path, include
+from django.views.generic import TemplateView
 
-app_name = 'djangoapp'
 urlpatterns = [
-    # # path for registration
+    path('admin/', admin.site.urls),
 
-    # path for login
-    # path(route='login', view=views.login_user, name='login'),
+    # Static pages (from frontend/static)
+    path('', TemplateView.as_view(template_name='home.html')),
+    path('about/', TemplateView.as_view(template_name='about.html')),
+    path('contact/', TemplateView.as_view(template_name='Contact.html')),
 
-    # path for dealer reviews view
+    # React login page (served from frontend/build -> index.html)
+    path('login/', TemplateView.as_view(template_name='index.html')),
 
-    # path for add a review view
-
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Django app routes (includes /login without trailing slash -> views.login_user)
+    path('', include('djangoapp.urls')),
+]
