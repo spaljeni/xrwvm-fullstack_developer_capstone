@@ -1,123 +1,83 @@
 # Uncomment the required imports before adding the code
 
-import json
-import logging
+from django.shortcuts import render
+from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth import logout
+from django.contrib import messages
 from datetime import datetime
 
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import messages
-from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate, logout
+from django.http import JsonResponse
+from django.contrib.auth import login, authenticate
+import logging
+import json
 from django.views.decorators.csrf import csrf_exempt
-
 from .populate import initiate
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
-# Create your views here.
+# =========================
+# AUTH VIEWS
+# =========================
 
 @csrf_exempt
 def login_user(request):
-    """
-    Backend login endpoint:
-      - GET: info message (ne parsira JSON)
-      - POST: JSON body: {"userName": "...", "password": "..."}
-    """
-    if request.method != "POST":
-        return JsonResponse(
-            {"detail": "Login endpoint. Send POST with JSON {userName, password}."},
-            status=200,
-        )
-
-    try:
-        body = request.body.decode("utf-8") if request.body else "{}"
-        data = json.loads(body)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    username = data.get("userName") or data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return JsonResponse({"error": "userName and password required"}, status=400)
-
+    data = json.loads(request.body)
+    username = data['userName']
+    password = data['password']
     user = authenticate(username=username, password=password)
+    resp = {"userName": username}
     if user is not None:
         login(request, user)
-        return JsonResponse({"userName": username, "status": "Authenticated"}, status=200)
+        resp["status"] = "Authenticated"
+    return JsonResponse(resp)
 
-    return JsonResponse({"userName": username, "status": "Invalid credentials"}, status=401)
-
-
-@csrf_exempt
 def logout_user(request):
-    """
-    GET /djangoapp/logout -> terminates session and returns {"userName": ""}
-    """
-    if request.method != "GET":
-        return JsonResponse({"error": "GET only"}, status=405)
-
     logout(request)  # Terminate user session
     data = {"userName": ""}  # Return empty username
-    return JsonResponse(data, status=200)
+    return JsonResponse(data)
 
-
-# NEW: registration endpoint
 @csrf_exempt
 def registration(request):
-    """
-    POST /djangoapp/register
-      Body JSON:
-        {
-          "userName": "...",
-          "password": "...",
-          "firstName": "...",
-          "lastName": "...",
-          "email": "..."
-        }
-      Creates user, logs in, returns {"userName": "...", "status": "Authenticated"}
-      If username exists -> {"userName": "...", "error": "Already Registered"}
-    """
-    if request.method != "POST":
-        return JsonResponse({"error": "POST only"}, status=405)
+    # Load JSON data from the request body
+    data = json.loads(request.body)
+    username   = data['userName']
+    password   = data['password']
+    first_name = data['firstName']
+    last_name  = data['lastName']
+    email      = data['email']
 
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    username = data.get("userName")
-    password = data.get("password")
-    first_name = data.get("firstName")
-    last_name = data.get("lastName")
-    email = data.get("email")
-
-    if not all([username, password, first_name, last_name, email]):
-        return JsonResponse({"error": "Missing required fields"}, status=400)
-
-    # Check if user exists
+    username_exist = False
     try:
         User.objects.get(username=username)
-        # already registered
-        return JsonResponse({"userName": username, "error": "Already Registered"}, status=200)
-    except User.DoesNotExist:
+        username_exist = True
+    except Exception:
         logger.debug("%s is new user", username)
 
-    # Create and log in
-    user = User.objects.create_user(
-        username=username,
-        first_name=first_name,
-        last_name=last_name,
-        password=password,
-        email=email,
-    )
-    login(request, user)
-    return JsonResponse({"userName": username, "status": "Authenticated"}, status=200)
+    if not username_exist:
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            email=email
+        )
+        login(request, user)
+        return JsonResponse({"userName": username, "status": "Authenticated"})
+    else:
+        return JsonResponse({"userName": username, "error": "Already Registered"})
 
-# (stubs you may fill later)
-# def get_dealerships(request): ...
-# def get_dealer_reviews(request, dealer_id): ...
-# def get_dealer_details(request, dealer_id): ...
-# def add_review(request): ...
+# =========================
+# DEALERS API (demo JSON)
+# =========================
+
+def get_dealerships(request):
+    """Simple JSON demo; kasnije zamijeni stvarnim izvorom (DB/API)."""
+    dealers = [
+        {"id": 1, "name": "Best Cars Chicago", "city": "Chicago, IL", "phone": "(312) 555-0101"},
+        {"id": 2, "name": "Lakeview Motors",   "city": "Evanston, IL", "phone": "(847) 555-0102"},
+        {"id": 3, "name": "South Loop Auto",   "city": "Chicago, IL", "phone": "(312) 555-0103"},
+    ]
+    return JsonResponse({"dealers": dealers})

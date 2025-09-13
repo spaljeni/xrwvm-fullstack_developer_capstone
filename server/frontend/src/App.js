@@ -1,23 +1,16 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
+import Dealers from "./components/Dealers/Dealers";
 
-function App() {
+export default function App() {
   return (
-    <Router>
-      <Routes>
-        {/* React stranice */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/login/*" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/register/*" element={<Register />} />
-
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/login/*" element={<Login />} />
+      <Route path="/register/*" element={<Register />} />
+      <Route path="/dealers/*" element={<Dealers />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
-
-export default App;
